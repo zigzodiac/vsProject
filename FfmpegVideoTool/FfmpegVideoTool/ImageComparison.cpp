@@ -13,6 +13,23 @@
 
 using namespace std;
 using namespace cv;
+cv::Mat* pCvMat1;
+cv::Mat* pCvMat2;
+int InitMat(int width, int height, AVPixelFormat fmt) {
+    cv::Mat* pCvMat1 = new cv::Mat();
+    cv::Mat* pCvMat2 = new cv::Mat();
+    pCvMat1->create(cv::Size(width, height), CV_8UC3);
+    pCvMat2->create(cv::Size(width, height), CV_8UC3);
+}
+int SetMatData(uint8_t* out_buffer, int height, int width, AVPixelFormat fmt, int size, int flag) {
+    if (flag == 1) {
+        memcpy(pCvMat1->data, out_buffer, size);
+    }
+    else {
+        memcpy(pCvMat2->data, out_buffer, size);
+    }
+    
+}
 
 int PictureShow()
 {
@@ -27,13 +44,10 @@ int PictureShow()
     return 0;
 }
 
-int PicCompare(uint8_t* out_buffer, int height, int width, AVPixelFormat fmt) {
+double PicCompare() {
 
-    cv::Mat* pCvMat1 = new cv::Mat();
-    cv::Mat* pCvMat2 = new cv::Mat();
-    pCvMat1->create(cv::Size(width, height), CV_8UC3);
-    pCvMat2->create(cv::Size(width, height), CV_8UC3);
-    memcpy(pCvMat1->data, out_buffer, numBytes);
+    
+    
     Mat box = imread("2.png");
     Mat scene = imread("Êý×Ö.jpg");
     if (scene.empty()) {
@@ -44,8 +58,8 @@ int PicCompare(uint8_t* out_buffer, int height, int width, AVPixelFormat fmt) {
     vector<KeyPoint> keypoints_obj, keypoints_sence;
     Mat descriptors_box, descriptors_sence;
     Ptr<ORB> detector = ORB::create();
-    detector->detectAndCompute(scene, Mat(), keypoints_sence, descriptors_sence);
-    detector->detectAndCompute(box, Mat(), keypoints_obj, descriptors_box);
+    detector->detectAndCompute(*pCvMat1, Mat(), keypoints_sence, descriptors_sence);
+    detector->detectAndCompute(*pCvMat2, Mat(), keypoints_obj, descriptors_box);
     vector<DMatch> matches;
     // ³õÊ¼»¯flannÆ¥Åä
     // Ptr<FlannBasedMatcher> matcher = FlannBasedMatcher::create(); // default is bad, using local sensitive hash(LSH)
@@ -64,10 +78,10 @@ int PicCompare(uint8_t* out_buffer, int height, int width, AVPixelFormat fmt) {
               goodMatches.push_back(matches[i]);
     }
     double similar = goodMatches.size() / matches.size();
-    printf("sililar is %f", similar);
+    printf("similar is %f", similar);
     Mat dst;
     drawMatches(box, keypoints_obj, scene, keypoints_sence, goodMatches, dst);
     imshow("output", dst);
     waitKey(0);
-    return 0;
+    return similar;
 }
