@@ -1,0 +1,81 @@
+// ATLNetworkInterfaceCom.idl : ATLNetworkInterfaceCom的 IDL 源
+//
+
+// 此文件将由 MIDL 工具处理以
+// 产生类型库(ATLNetworkInterfaceCom.tlb)和封送处理代码。
+
+import "oaidl.idl";
+import "ocidl.idl";
+
+typedef enum
+{
+	clipAnalysisStatus_Unknow,
+	clipAnalysisStatus_Completed
+} EClipProcessStatus;
+
+[
+	object,
+	uuid(a817e7a2-43fa-11d0-9e44-00aa00b6770a),
+	dual,	
+	pointer_default(unique)
+]
+interface IComponentRegistrar : IDispatch
+{
+	[id(1)]	HRESULT Attach([in] BSTR bstrPath);
+	[id(2)]	HRESULT RegisterAll();
+	[id(3)]	HRESULT UnregisterAll();
+	[id(4)]	HRESULT GetComponents([out] SAFEARRAY(BSTR)* pbstrCLSIDs, [out] SAFEARRAY(BSTR)* pbstrDescriptions);
+	[id(5)]	HRESULT RegisterComponent([in] BSTR bstrCLSID);
+	[id(6)] HRESULT UnregisterComponent([in] BSTR bstrCLSID);
+};
+
+[
+	object,
+	uuid(476E34DE-523D-4BE9-95FB-E77C605ADCAD),
+	dual,
+	nonextensible,
+	pointer_default(unique)
+]
+interface INetworkComImpl : IDispatch{
+	[id(1)] HRESULT SetUrl([in] BSTR in_sUrl);
+	[id(2)] HRESULT SetHostInfo([in] BSTR in_sIp, [in] USHORT in_usPort);
+	[id(3)] HRESULT Open();
+	[id(4)] HRESULT Close();
+	[id(5)] HRESULT SetCurrentTime([in] BSTR in_sTimeString);
+	[id(6)] HRESULT ProcessClips([in] BSTR in_sFileName, [in] BSTR in_sJumpId);
+};
+[
+	uuid(1AD9C3AD-9C1D-410B-A5E0-8B07CB887912),
+	version(1.0),
+	custom(a817e7a1-43fa-11d0-9e44-00aa00b6770a,"{D98F0049-6A33-4002-9400-3876477772D7}")
+]
+library ATLNetworkInterfaceComLib
+{
+	importlib("stdole2.tlb");
+	[
+		uuid(D98F0049-6A33-4002-9400-3876477772D7)		
+	]
+	coclass CompReg
+	{
+		[default] interface IComponentRegistrar;
+	};
+	[
+		uuid(0194A61D-6696-4FBC-8EE9-7C398D3130A9)		
+	]
+	dispinterface _INetworkComImplEvents
+	{
+		properties:
+		methods:
+			[id(1)] HRESULT ClipInfoNotify([in] BSTR in_sClipInfo);
+			[id(2)] HRESULT ClipProcessStatusNotify([in] EClipProcessStatus in_eStatus);
+	};
+	[
+		uuid(28DFD1E2-B419-447B-8CA6-1BF6E7BA1846)		
+	]
+	coclass NetworkComImpl
+	{
+		[default] interface INetworkComImpl;
+		[default, source] dispinterface _INetworkComImplEvents;
+	};
+};
+

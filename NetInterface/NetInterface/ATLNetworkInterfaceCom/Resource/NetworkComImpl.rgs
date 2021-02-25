@@ -1,0 +1,26 @@
+HKCR
+{
+	NetworkComImpl.math.1 = s 'NetworkComImpl Class'
+	{
+		CLSID = s '{28DFD1E2-B419-447B-8CA6-1BF6E7BA1846}'
+	}
+	NetworkComImpl.math = s 'NetworkComImpl Class'
+	{		
+		CurVer = s 'NetworkComImpl.math.1'
+	}
+	NoRemove CLSID
+	{
+		ForceRemove {28DFD1E2-B419-447B-8CA6-1BF6E7BA1846} = s 'NetworkComImpl Class'
+		{
+			ProgID = s 'NetworkComImpl.math.1'
+			VersionIndependentProgID = s 'NetworkComImpl.math'
+			ForceRemove Programmable
+			InprocServer32 = s '%MODULE%'
+			{
+				val ThreadingModel = s 'Apartment'
+			}
+			TypeLib = s '{1AD9C3AD-9C1D-410B-A5E0-8B07CB887912}'
+			Version = s '1.0'
+		}
+	}
+}

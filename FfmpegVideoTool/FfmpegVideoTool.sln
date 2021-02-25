@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30717.126
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FfmpegVideoTool", "FfmpegVideoTool\FfmpegVideoTool.vcxproj", "{F680E02E-A53D-4F8A-96D4-91673A6B3206}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F680E02E-A53D-4F8A-96D4-91673A6B3206}.Debug|x64.ActiveCfg = Debug|x64
+		{F680E02E-A53D-4F8A-96D4-91673A6B3206}.Debug|x64.Build.0 = Debug|x64
+		{F680E02E-A53D-4F8A-96D4-91673A6B3206}.Release|x64.ActiveCfg = Release|x64
+		{F680E02E-A53D-4F8A-96D4-91673A6B3206}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A3D29B0F-622A-4999-A5AD-9DA1206E2D2F}
+	EndGlobalSection
+EndGlobal
