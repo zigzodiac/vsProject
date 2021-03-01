@@ -3,6 +3,7 @@
 #include <opencv2/core/mat.hpp>
 
 #include "ImageComparison.h"
+#include <iostream>
 
 static AVFormatContext* ifmt_ctx;
 typedef struct StreamContext {
@@ -231,6 +232,7 @@ int GetVideoPic()
     
     InitMat(stream_ctx[0].dec_ctx->width, stream_ctx[0].dec_ctx->height, AV_PIX_FMT_BGR24);
     int picIsSet = 0;
+    int curKeyFrame = 0;
     while (1) {
         if ((ret = av_read_frame(ifmt_ctx, &packet)) < 0)
             break;
@@ -268,7 +270,7 @@ int GetVideoPic()
                 pFrameRGB->linesize);
             if (!stream_ctx[stream_index].dec_frame->key_frame)
                 continue;
-
+            
             if (!picIsSet) {
                 SetMatData(out_buffer, stream_ctx[0].dec_ctx->height, stream_ctx[0].dec_ctx->width, AV_PIX_FMT_BGR24, numBytes, 1);
                 snprintf(buf, sizeof(buf), "%s/picture-%d.jpg", "D:/TestVideo/picture", index++);
@@ -277,16 +279,19 @@ int GetVideoPic()
             }
             else {
                 SetMatData(out_buffer, stream_ctx[0].dec_ctx->height, stream_ctx[0].dec_ctx->width, AV_PIX_FMT_BGR24, numBytes, 2);
-                double result = PicCompare();
-                if (result < 0.8) {
+                //double result = PicCompare();
+                std::cout << "current frame key frame idex is "<< curKeyFrame++ << std::endl;
+                int result = PerceptualHash();
+                if (result > 3) {
                     SetMatData(out_buffer, stream_ctx[0].dec_ctx->height, stream_ctx[0].dec_ctx->width, AV_PIX_FMT_BGR24, numBytes, 1);
                     snprintf(buf, sizeof(buf), "%s/picture-%d.jpg", "D:/TestVideo/picture", index++);
                     savePicture(stream_ctx[stream_index].dec_frame, buf); //±£´æÎªjpgÍ¼Æ¬
                 }
             }
             
-
-            
+            //bool result = compareFacesByHist£±();
+            // snprintf(buf, sizeof(buf), "%s/picture-%d.jpg", "D:/TestVideo/picture", index++);
+            //savePicture(stream_ctx[stream_index].dec_frame, buf); //±£´æÎªjpgÍ¼Æ¬
 
                 //SaveFrame(pFrameRGB, stream_ctx[0].dec_ctx->width, stream_ctx[0].dec_ctx->height, index++); //±£´æÍ¼Æ¬
 
