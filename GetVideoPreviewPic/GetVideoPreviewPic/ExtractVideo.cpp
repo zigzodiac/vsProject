@@ -11,15 +11,35 @@ typedef struct StreamContext {
     AVCodecContext* enc_ctx;
     AVFrame* dec_frame;
 } StreamContext;
+
 static StreamContext* stream_ctx;
+static char* outputDir = NULL;
+static int diffDegree = 10;
+int SetDiffDegree(int diff) {
+    if (diff > 64 || diff < 0) {
+        av_log(NULL, AV_LOG_ERROR, "diffDegree Out of range, max is 64 min is 0\n");
+        return -81;
+    }
+    diffDegree = diff;
+}
+
+int  SetDir(char** dir) {
+    outputDir = *dir;
+    if (!outputDir) {
+        av_log(NULL, AV_LOG_ERROR, "output dir is null\n");
+        return -99;
+    }
+    return 0;
+}
 
 void SaveFrame(AVFrame* pFrame, int width, int height, int index)
 {
     FILE* pFile;
     char szFilename[32];
     int y;
-    sprintf(szFilename, "D:/TestVideo/picture/frame%d.jpg", index);
-    pFile = fopen(szFilename, "wb");
+    sprintf_s(szFilename, "D:/TestVideo/picture/frame%d.jpg", index);
+    errno_t err;
+    err = fopen_s(&pFile,szFilename, "wb");
 
     if (pFile == NULL)
     {
@@ -35,7 +55,7 @@ void SaveFrame(AVFrame* pFrame, int width, int height, int index)
 }
 
 int savePicture(AVFrame* pFrame, char* out_name) {//编码保存图片
-
+    int ret;
     int width = pFrame->width;
     int height = pFrame->height;
     AVCodecContext* pCodeCtx = NULL;
@@ -46,15 +66,16 @@ int savePicture(AVFrame* pFrame, char* out_name) {//编码保存图片
     pFormatCtx->oformat = av_guess_format("mjpeg", NULL, NULL);
 
     // 创建并初始化输出AVIOContext
-    if (avio_open(&pFormatCtx->pb, out_name, AVIO_FLAG_READ_WRITE) < 0) {
-        printf("Couldn't open output file.");
-        return -1;
+    if (ret = avio_open(&pFormatCtx->pb, out_name, AVIO_FLAG_READ_WRITE) < 0) {
+        av_log(NULL, AV_LOG_ERROR, "Couldn't open output file\n");
+        return ret;
     }
 
     // 构建一个新stream
     AVStream* pAVStream = avformat_new_stream(pFormatCtx, 0);
     if (pAVStream == NULL) {
-        return -1;
+        av_log(NULL, AV_LOG_ERROR, "Failed to create stream\n");
+        return -80;
     }
 
     AVCodecParameters* parameters = pAVStream->codecpar;
@@ -67,7 +88,7 @@ int savePicture(AVFrame* pFrame, char* out_name) {//编码保存图片
     AVCodec* pCodec = avcodec_find_encoder(pAVStream->codecpar->codec_id);
 
     if (!pCodec) {
-        printf("Could not find encoder\n");
+        av_log(NULL, AV_LOG_ERROR, "Could not find encoder\n");
         return -1;
     }
 
@@ -77,24 +98,24 @@ int savePicture(AVFrame* pFrame, char* out_name) {//编码保存图片
         exit(1);
     }
 
-    if ((avcodec_parameters_to_context(pCodeCtx, pAVStream->codecpar)) < 0) {
+    if ((ret = avcodec_parameters_to_context(pCodeCtx, pAVStream->codecpar)) < 0) {
         fprintf(stderr, "Failed to copy %s codec parameters to decoder context\n",
             av_get_media_type_string(AVMEDIA_TYPE_VIDEO));
-        return -1;
+        return ret;
     }
 
     pCodeCtx->time_base.num = 1;
-    pCodeCtx->time_base.num = 25;
+    pCodeCtx->time_base.den = 25;
 
-    if (avcodec_open2(pCodeCtx, pCodec, NULL) < 0) {
-        printf("Could not open codec.");
-        return -1;
+    if (ret = avcodec_open2(pCodeCtx, pCodec, NULL) < 0) {
+        av_log(NULL, AV_LOG_ERROR, "Could not open codec\n");
+        return ret;
     }
 
-    int ret = avformat_write_header(pFormatCtx, NULL);
+    ret = avformat_write_header(pFormatCtx, NULL);
     if (ret < 0) {
-        printf("write_header fail\n");
-        return -1;
+        av_log(NULL, AV_LOG_ERROR, "write_header fail\n");
+        return ret;
     }
 
     int y_size = width * height;
@@ -106,23 +127,24 @@ int savePicture(AVFrame* pFrame, char* out_name) {//编码保存图片
 
     // 编码数据
     ret = avcodec_send_frame(pCodeCtx, pFrame);
-    if (ret < 0) {
-        printf("Could not avcodec_send_frame.");
-        return -1;
-    }
 
+    if (ret < 0) {
+        av_log(NULL, AV_LOG_ERROR, "Could not avcodec_send_frame\n");
+        return ret;
+    }
     // 得到编码后数据
     ret = avcodec_receive_packet(pCodeCtx, &pkt);
+
     if (ret < 0) {
-        printf("Could not avcodec_receive_packet");
-        return -1;
+        av_log(NULL, AV_LOG_ERROR, "Could not avcodec_receive_packet\n");
+        return ret;
     }
 
     ret = av_write_frame(pFormatCtx, &pkt);
 
     if (ret < 0) {
-        printf("Could not av_write_frame");
-        return -1;
+        av_log(NULL, AV_LOG_ERROR, "Could not av_write_frame\n");
+        return ret;
     }
 
     av_packet_unref(&pkt);
@@ -140,7 +162,7 @@ int savePicture(AVFrame* pFrame, char* out_name) {//编码保存图片
 
 int OpenVideo(const char* filename)
 {
-	
+
     int ret;
     unsigned int i;
 
@@ -211,7 +233,9 @@ int GetVideoPic()
     unsigned int stream_index;
     unsigned int i;
     int got_frame;
-    
+    AVRational secondTimeBase;
+    secondTimeBase.num = 1;
+    secondTimeBase.den = 1000;
 
     static struct SwsContext* img_convert_ctx;
     img_convert_ctx = sws_getContext(stream_ctx[0].dec_ctx->width, stream_ctx[0].dec_ctx->height,
@@ -219,20 +243,22 @@ int GetVideoPic()
         AV_PIX_FMT_BGR24, SWS_BICUBIC, NULL, NULL, NULL); //1.图像色彩空间转换；2.分辨率缩放；3.前后图像滤波处理
 
     AVFrame* pFrameRGB = av_frame_alloc();
-    int numBytes = avpicture_get_size(AV_PIX_FMT_BGR24, stream_ctx[0].dec_ctx->width, stream_ctx[0].dec_ctx->height);
+    int numBytes = av_image_get_buffer_size(AV_PIX_FMT_BGR24, stream_ctx[0].dec_ctx->width, stream_ctx[0].dec_ctx->height, 1);
 
     uint8_t* out_buffer = (uint8_t*)av_malloc(numBytes * sizeof(uint8_t));//内存分配
-    avpicture_fill((AVPicture*)pFrameRGB, out_buffer, AV_PIX_FMT_BGR24,
-        stream_ctx[0].dec_ctx->width, stream_ctx[0].dec_ctx->height); //为已经分配的空间的结构体AVPicture挂上一段用于保存数据的空间，这个结构体中有一个指针数组data[4]，挂在这个数组里
+    av_image_fill_arrays(pFrameRGB->data, pFrameRGB->linesize,out_buffer, AV_PIX_FMT_BGR24,
+        stream_ctx[0].dec_ctx->width, stream_ctx[0].dec_ctx->height, 1); //为已经分配的空间的结构体AVPicture挂上一段用于保存数据的空间，这个结构体中有一个指针数组data[4]，挂在这个数组里
     pFrameRGB->height = stream_ctx[0].dec_ctx->height;
     pFrameRGB->width = stream_ctx[0].dec_ctx->width;
     pFrameRGB->format = AV_PIX_FMT_BGR24;
     int index = 0;
+    int keyFrameIndex = 0;
     char buf[1024];
-    
+
     InitMat(stream_ctx[0].dec_ctx->width, stream_ctx[0].dec_ctx->height, AV_PIX_FMT_BGR24);
     int picIsSet = 0;
     int curKeyFrame = 0;
+    int64_t frameTime = 0;
     while (1) {
         if ((ret = av_read_frame(ifmt_ctx, &packet)) < 0)
             break;
@@ -270,35 +296,34 @@ int GetVideoPic()
                 pFrameRGB->linesize);
             if (!stream_ctx[stream_index].dec_frame->key_frame)
                 continue;
-            
+            printf("The currently processing key frame index is %d\r", keyFrameIndex++);
             if (!picIsSet) {
                 SetMatData(out_buffer, stream_ctx[0].dec_ctx->height, stream_ctx[0].dec_ctx->width, AV_PIX_FMT_BGR24, numBytes, 1);
-                snprintf(buf, sizeof(buf), "%s/picture-%d.jpg", "D:/TestVideo/picture", index++);
+                frameTime = av_rescale_q(stream_ctx[stream_index].dec_frame->pts, stream_ctx[stream_index].dec_ctx->time_base, secondTimeBase);
+                snprintf(buf, sizeof(buf), "%s/%I64d.jpg", outputDir, frameTime);
                 savePicture(stream_ctx[stream_index].dec_frame, buf); //保存为jpg图片
+                index++;
                 picIsSet = 1;
             }
             else {
                 SetMatData(out_buffer, stream_ctx[0].dec_ctx->height, stream_ctx[0].dec_ctx->width, AV_PIX_FMT_BGR24, numBytes, 2);
                 //double result = PicCompare();
-                std::cout << "current frame key frame idex is "<< curKeyFrame++ << std::endl;
+                //std::cout << "current frame key frame idex is " << curKeyFrame++ << std::endl;
                 int result = pHashValueCompare();
-                if (result >=10) {
+                if (result >= diffDegree) {
                     SetMatData(out_buffer, stream_ctx[0].dec_ctx->height, stream_ctx[0].dec_ctx->width, AV_PIX_FMT_BGR24, numBytes, 1);
-                    snprintf(buf, sizeof(buf), "%s/picture-%d-diff-%d.jpg", "D:/TestVideo/picture", index++,result);
+                    frameTime = av_rescale_q(stream_ctx[stream_index].dec_frame->pts, stream_ctx[stream_index].dec_ctx->time_base, secondTimeBase);
+                    snprintf(buf, sizeof(buf), "%s/%I64d.jpg", outputDir, frameTime);
                     savePicture(stream_ctx[stream_index].dec_frame, buf); //保存为jpg图片
+                    index++;
                 }
             }
-            
-            //bool result = compareFacesByHist１();
-            // snprintf(buf, sizeof(buf), "%s/picture-%d.jpg", "D:/TestVideo/picture", index++);
-            //savePicture(stream_ctx[stream_index].dec_frame, buf); //保存为jpg图片
-
-                //SaveFrame(pFrameRGB, stream_ctx[0].dec_ctx->width, stream_ctx[0].dec_ctx->height, index++); //保存图片
-
-            stream_ctx[stream_index].dec_frame->pts = stream_ctx[stream_index].dec_frame->best_effort_timestamp;
         }
         av_packet_unref(&packet);
     }
+    std::cout << std::endl;
+    std::cout << "Number of previewed pictures is  " << index << std::endl;
+    
 
 end:
     av_packet_unref(&packet);

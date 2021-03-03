@@ -171,7 +171,7 @@ int PerceptualHash()
         cout << "they are two different images!" << endl;
     else
         cout << "two image are somewhat similar!" << endl;
-    cout << "diff is !" << iDiffNum <<endl;
+    cout << "diff is !" << iDiffNum << endl;
     return iDiffNum;
 }
 
@@ -247,106 +247,92 @@ bool compareFacesByHist１()
 }
 
 
-    //pHash算法
-    int pHashValueCompare()
+//pHash算法
+int pHashValueCompare()
+{
+    cv::Mat matDst1, matDst2;
+    int diffNum = 0;
+    Mat img, dst, img2, dst2;
+    string rst(64, '\0');
+    string rst2(64, '\0');
+    double dIdex[64];
+    double dIdex2[64];
+    double mean = 0.0;
+    double mean2 = 0.0;
+    int k = 0, k2 = 0;
+    if (img_1->channels() == 3)
     {
-
-
-        cv::Mat matDst1, matDst2;
-
-        ///*cv::resize(*img_1, matDst1, cv::Size(8, 8), 0, 0, cv::INTER_CUBIC);
-        //cv::resize(*img_2, matDst2, cv::Size(8, 8), 0, 0, cv::INTER_CUBIC);*/
-        //update 20181206 for the bug cvtColor
-        /*cv::Mat temp1 = matDst1;
-        cv::Mat temp2 = matDst2;
-        cv::cvtColor(*img_1, matDst1, CV_BGR2GRAY);
-        cv::cvtColor(*img_2, matDst2, CV_BGR2GRAY);*/
-        //cv::Mat src1 = cv::imread("D:/TestVideo/picture/picture-36.jpg");
-        //cv::Mat src2 = cv::imread("D:/TestVideo/picture/picture-37.jpg");
-        //cv::Mat* img_1 = &src1;
-        //cv::Mat* img_2 = &src2;
-        int diffNum = 0;
-        Mat img, dst, img2, dst2;
-        string rst(64, '\0');
-        string rst2(64, '\0');
-        double dIdex[64];
-        double dIdex2[64];
-        double mean = 0.0;
-        double mean2 = 0.0;
-        int k = 0, k2 = 0;
-        if (img_1->channels() == 3)
-        {
-            cvtColor(*img_1, matDst1, CV_BGR2GRAY);
-            img = Mat_<double>(matDst1);
-        }
-        else
-        {
-            img = Mat_<double>(*img_1);
-        }
-        if (img_2->channels() == 3)
-        {
-            cvtColor(*img_2, matDst2, CV_BGR2GRAY);
-            img2 = Mat_<double>(matDst2);
-        }
-        else
-        {
-            img2 = Mat_<double>(*img_2);
-        }
-
-        /* 第一步，缩放尺寸*/
-        resize(img, img, Size(32, 32));
-        resize(img2, img2, Size(32, 32));
-
-        /* 第二步，离散余弦变换，DCT系数求取*/
-        dct(img, dst);
-        dct(img2, dst2);
-
-        /* 第三步，求取DCT系数均值（左上角8*8区块的DCT系数）*/
-        for (int i = 0; i < 8; ++i) {
-            for (int j = 0; j < 8; ++j)
-            {
-                dIdex[k] = dst.at<double>(i, j);
-                mean += dst.at<double>(i, j) / 64;
-                ++k;
-            }
-        }
-        for (int i = 0; i < 8; ++i) {
-            for (int j = 0; j < 8; ++j)
-            {
-                dIdex2[k2] = dst2.at<double>(i, j);
-                mean2 += dst2.at<double>(i, j) / 64;
-                ++k2;
-            }
-        }
-
-        /* 第四步，计算哈希值。*/
-        for (int i = 0; i < 64; ++i)
-        {
-            if (dIdex[i] >= mean)
-            {
-                rst[i] = '1';
-            }
-            else
-            {
-                rst[i] = '0';
-            }
-        }
-        for (int i = 0; i < 64; ++i)
-        {
-            if (dIdex2[i] >= mean2)
-            {
-                rst2[i] = '1';
-            }
-            else
-            {
-                rst2[i] = '0';
-            }
-        }
-        
-        for (int i = 0; i < 64; i++) {
-            if (rst[i] != rst2[i])
-                diffNum++;
-        }
-        cout << "two  picture diffNum is " << diffNum << endl;
-        return diffNum;
+        cvtColor(*img_1, matDst1, CV_BGR2GRAY);
+        img = Mat_<double>(matDst1);
     }
+    else
+    {
+        img = Mat_<double>(*img_1);
+    }
+    if (img_2->channels() == 3)
+    {
+        cvtColor(*img_2, matDst2, CV_BGR2GRAY);
+        img2 = Mat_<double>(matDst2);
+    }
+    else
+    {
+        img2 = Mat_<double>(*img_2);
+    }
+
+    /* 第一步，缩放尺寸*/
+    resize(img, img, Size(32, 32));
+    resize(img2, img2, Size(32, 32));
+
+    /* 第二步，离散余弦变换，DCT系数求取*/
+    dct(img, dst);
+    dct(img2, dst2);
+
+    /* 第三步，求取DCT系数均值（左上角8*8区块的DCT系数）*/
+    for (int i = 0; i < 8; ++i) {
+        for (int j = 0; j < 8; ++j)
+        {
+            dIdex[k] = dst.at<double>(i, j);
+            mean += dst.at<double>(i, j) / 64;
+            ++k;
+        }
+    }
+    for (int i = 0; i < 8; ++i) {
+        for (int j = 0; j < 8; ++j)
+        {
+            dIdex2[k2] = dst2.at<double>(i, j);
+            mean2 += dst2.at<double>(i, j) / 64;
+            ++k2;
+        }
+    }
+
+    /* 第四步，计算哈希值。*/
+    for (int i = 0; i < 64; ++i)
+    {
+        if (dIdex[i] >= mean)
+        {
+            rst[i] = '1';
+        }
+        else
+        {
+            rst[i] = '0';
+        }
+    }
+    for (int i = 0; i < 64; ++i)
+    {
+        if (dIdex2[i] >= mean2)
+        {
+            rst2[i] = '1';
+        }
+        else
+        {
+            rst2[i] = '0';
+        }
+    }
+
+    for (int i = 0; i < 64; i++) {
+        if (rst[i] != rst2[i])
+            diffNum++;
+    }
+    //cout << "two  picture diffNum is " << diffNum << endl;
+    return diffNum;
+}
