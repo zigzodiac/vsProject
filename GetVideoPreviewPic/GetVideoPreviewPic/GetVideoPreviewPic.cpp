@@ -6,11 +6,12 @@
 #include <io.h>
 #include <string>
 #include "ExtractVideo.h"
+#include "ImageComparison.h"
 
 
 int main(int arg, char** argv)
 {
-    int ret;
+    int ret = 0;
     
     for (int i = 0; i < arg; i++) {
         av_log(NULL, AV_LOG_ERROR, "input param %d %s\n", i, argv[i]);
@@ -20,7 +21,8 @@ int main(int arg, char** argv)
         std::cout << "example: GetVideoPreviewPic.exe D:\XunLeiDownload\fi9eP2FUaaYA.mp4  10 D:\XunLeiDownload\\" << std::endl;
         return -100;
     }
-
+    //float pictDarknessDegree = CheckBlankScreen();
+    //return ret;
     if (ret = OpenVideo(argv[1]) < 0) {
         return ret;
     }
@@ -46,6 +48,7 @@ int main(int arg, char** argv)
         return ret;
     if (ret = GetVideoPic() < 0)
         return ret;
+ end:
     return 0;
 }
 

@@ -9,6 +9,7 @@
 #include <opencv2/imgproc/types_c.h>
 #include <opencv2/imgcodecs/legacy/constants_c.h>
 
+
 #define RATIO    0.4
 
 using namespace std;
@@ -335,4 +336,81 @@ int pHashValueCompare()
     }
     //cout << "two  picture diffNum is " << diffNum << endl;
     return diffNum;
+}
+Mat getHistImage(int* histogram) {
+    
+    Mat hist(1, 256, CV_32F, histogram);   //用一个一维数组实例化Mat数组：hist并初始化
+
+    double minVal = 0;
+    double maxVal = 0;
+    minMaxLoc(hist, &minVal, &maxVal, 0, 0);  //寻找全局最小、最大像素数目
+
+    //绘制直方图
+    Mat histImage(255, 255, CV_8UC3, Scalar(255, 255, 255));
+    int hpt = static_cast<uchar>(0.9 * hist.cols); //直方图最大高度
+    for (int i = 0; i < 255; i++) {
+        float binVal = hist.at<float>(i);
+        int intensity = static_cast<int>(binVal * hpt / maxVal);
+        line(histImage, Point(i, hist.cols), Point(i, hist.cols - intensity), Scalar(255, 0, 0));
+    }
+    return histImage;
+}
+
+float CheckBlankScreen(int flag, float &result) {
+    Mat dst;
+    if (flag == 1) {
+        cvtColor(*img_1, dst, CV_BGR2GRAY);
+    }
+    else {
+        cvtColor(*img_2, dst, CV_BGR2GRAY);
+    }
+    //Mat dst = imread("D:/XunLeiDownload/pul2uLXIWGEA/3249250.jpg", IMREAD_GRAYSCALE);
+    if (dst.data == NULL) {
+        std::cout << "read image failed" << std::endl;
+        return -20;
+    }
+    //cvtColor(src, dst, CV_BGR2GRAY);
+
+    int image_count = 1;  //输出单个直方图
+    int channels[1] = { 0 }; //单通道
+    Mat out; //输出二维数组
+    int dims = 1; //维度为1
+    int histSize[1] = { 256 };  //灰度值Size：256个
+    float hrange[2] = { 0,255 }; //灰度范围[0-255]
+    const float* ranges[1] = { hrange }; //单个灰度范围[0-255]
+
+    int histogram[256] = { 0 };
+    int tmp;
+
+    //统计灰度个数
+    for (int i = 0; i < dst.rows; i++) {
+        for (int j = 0; j < dst.cols; j++) {
+            tmp = dst.at<uchar>(i, j);
+            histogram[tmp]++;
+        }
+    }
+    int index = 1;
+    int darkPixelPoints = 0;
+    int sumPixelPoints = 0;
+    for (int val : histogram) {
+        if (index < 20) {
+            darkPixelPoints += val;
+        }
+        sumPixelPoints += val;
+        //std::cout << "index:" << index << "   pixel value : " << val << endl;
+        index++;
+    }
+    
+    /*Mat histImage = getHistImage(histogram);
+    imshow("srcImage", dst);
+    imshow("count_histogram", histImage);*/
+
+    //2、使用calcHist输出二维灰度统计数组
+    //calcHist(&dst, image_count, channels, Mat(), out, dims, histSize, ranges);
+    //Mat histImage1 = getHistImage(out);   //第二种方法
+
+    //imshow("calcHist_histogram", histImage1);
+    //cv::waitKey();
+    result =  (float)darkPixelPoints / (float)sumPixelPoints;
+    return 0;
 }

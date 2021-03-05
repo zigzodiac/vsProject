@@ -259,6 +259,7 @@ int GetVideoPic()
     int picIsSet = 0;
     int curKeyFrame = 0;
     int64_t frameTime = 0;
+    float pictDarknessDegree = 0.0;
     while (1) {
         if ((ret = av_read_frame(ifmt_ctx, &packet)) < 0)
             break;
@@ -299,6 +300,11 @@ int GetVideoPic()
             printf("The currently processing key frame index is %d\r", keyFrameIndex++);
             if (!picIsSet) {
                 SetMatData(out_buffer, stream_ctx[0].dec_ctx->height, stream_ctx[0].dec_ctx->width, AV_PIX_FMT_BGR24, numBytes, 1);
+                ret = CheckBlankScreen(1, pictDarknessDegree);
+                if(ret < 0)
+                    av_log(NULL, AV_LOG_ERROR, "CheckBlankScreen failed, Error code: %d\n", ret);
+                if (pictDarknessDegree > 0.85)
+                    continue;
                 frameTime = av_rescale_q(stream_ctx[stream_index].dec_frame->pts, stream_ctx[stream_index].dec_ctx->time_base, secondTimeBase);
                 snprintf(buf, sizeof(buf), "%s/%I64d.jpg", outputDir, frameTime);
                 savePicture(stream_ctx[stream_index].dec_frame, buf); //保存为jpg图片
@@ -312,6 +318,11 @@ int GetVideoPic()
                 int result = pHashValueCompare();
                 if (result >= diffDegree) {
                     SetMatData(out_buffer, stream_ctx[0].dec_ctx->height, stream_ctx[0].dec_ctx->width, AV_PIX_FMT_BGR24, numBytes, 1);
+                    ret = CheckBlankScreen(2, pictDarknessDegree);
+                    if (ret < 0)
+                        av_log(NULL, AV_LOG_ERROR, "CheckBlankScreen failed, Error code: %d\n", ret);
+                    if (pictDarknessDegree > 0.85)
+                       continue;
                     frameTime = av_rescale_q(stream_ctx[stream_index].dec_frame->pts, stream_ctx[stream_index].dec_ctx->time_base, secondTimeBase);
                     snprintf(buf, sizeof(buf), "%s/%I64d.jpg", outputDir, frameTime);
                     savePicture(stream_ctx[stream_index].dec_frame, buf); //保存为jpg图片

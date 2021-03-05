@@ -11,3 +11,4 @@ int PerceptualHash();
 int pHashValueCompare();
 double PicCompare();
 int PictureShow();
+float CheckBlankScreen(int flag, float &result);
